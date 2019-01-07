@@ -247,6 +247,42 @@ class DiagGaussianProbabilityDistributionType(ProbabilityDistributionType):
         return tf.float32
 
 
+class BetaProbabilityDistributionType(ProbabilityDistributionType):
+    def __init__(self, size):
+        """
+        The probability distribution type for multivariate beta input
+
+        :param size: (int) the number of dimensions of the multivariate beta
+        """
+        self.size = size
+
+    def probability_distribution_class(self):
+        return BetaProbabilityDistribution
+
+    def proba_distribution_from_flat(self, flat):
+        """
+        returns the probability distribution from flat probabilities
+
+        :param flat: ([float]) the flat probabilities
+        :return: (ProbabilityDistribution) the instance of the ProbabilityDistribution associated
+        """
+        return self.probability_distribution_class()(flat)
+
+    def proba_distribution_from_latent(self, pi_latent_vector, vf_latent_vector, init_scale=1.0, init_bias=0.0):
+        pdparam = linear(pi_latent_vector, 'pi', self.size, init_scale=init_scale, init_bias=init_bias)
+        q_values = linear(vf_latent_vector, 'q', self.size, init_scale=init_scale, init_bias=init_bias)
+        return self.proba_distribution_from_flat(pdparam), pdparam, q_values
+
+    def param_shape(self):
+        return [2 * self.size]
+
+    def sample_shape(self):
+        return [self.size]
+
+    def sample_dtype(self):
+        return tf.float32
+
+
 class BernoulliProbabilityDistributionType(ProbabilityDistributionType):
     def __init__(self, size):
         """
@@ -415,6 +451,51 @@ class DiagGaussianProbabilityDistribution(ProbabilityDistribution):
 
         :param flat: ([float]) the multivariate gaussian input data
         :return: (ProbabilityDistribution) the instance from the given multivariate gaussian input data
+        """
+        return cls(flat)
+
+
+class BetaProbabilityDistribution(ProbabilityDistribution):
+    def __init__(self, flat):
+        """
+        Probability distributions from beta input
+
+        :param flat: ([float]) the beta input data
+        """
+        self.flat = flat
+        print(flat)
+        # as per http://proceedings.mlr.press/v70/chou17a/chou17a.pdf
+        alpha = 1.0 + tf.layers.dense(flat, len(flat.shape)-1, activation=tf.nn.softplus)
+        beta  = 1.0 + tf.layers.dense(flat, len(flat.shape)-1, activation=tf.nn.softplus)
+        self.dist = tf.distributions.Beta(concentration1=alpha, concentration0=beta, validate_args=True, 
+            allow_nan_stats=False)
+
+    def flatparam(self):
+        return self.flat
+
+    def mode(self):
+        return self.dist.mode()
+
+    def neglogp(self, x):
+        return tf.reduce_sum(-self.dist.log_prob(x), axis=-1)
+
+    def kl(self, other):
+        assert isinstance(other, BetaProbabilityDistribution)
+        return self.dist.kl_divergence(other.dist)
+
+    def entropy(self):
+        return self.dist.entropy()
+
+    def sample(self):
+        return self.dist.sample()
+
+    @classmethod
+    def fromflat(cls, flat):
+        """
+        Create an instance of this from new beta input
+
+        :param flat: ([float]) the beta input data
+        :return: (ProbabilityDistribution) the instance from the given beta input data
         """
         return cls(flat)
 
