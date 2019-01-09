@@ -463,7 +463,6 @@ class BetaProbabilityDistribution(ProbabilityDistribution):
         :param flat: ([float]) the beta input data
         """
         self.flat = flat
-        print(flat)
         # as per http://proceedings.mlr.press/v70/chou17a/chou17a.pdf
         alpha = 1.0 + tf.layers.dense(flat, len(flat.shape)-1, activation=tf.nn.softplus)
         beta  = 1.0 + tf.layers.dense(flat, len(flat.shape)-1, activation=tf.nn.softplus)
