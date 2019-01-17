@@ -258,7 +258,13 @@ class TRPO(ActorCriticRLModel):
                                                  reward_giver=self.reward_giver, gail=self.using_gail)
 
                 episodes_so_far = 0
-                timesteps_so_far = 0
+                # total timesteps count before last reset
+                prev_timesteps_so_far = 0
+                # timesteps count after last reset
+                total_timestep = 0
+                # current total count of timesteps
+                def timesteps_so_far():
+                    return prev_timesteps_so_far + total_timestep
                 iters_so_far = 0
                 t_start = time.time()
                 lenbuffer = deque(maxlen=40)  # rolling buffer for episode lengths
@@ -284,7 +290,7 @@ class TRPO(ActorCriticRLModel):
                         # compatibility with callbacks that have no return statement.
                         if callback(locals(), globals()) == False:
                             break
-                    if total_timesteps and timesteps_so_far >= total_timesteps:
+                    if total_timesteps and timesteps_so_far() >= total_timesteps:
                         break
 
                     logger.log("********** Iteration %i ************" % iters_so_far)
@@ -315,7 +321,7 @@ class TRPO(ActorCriticRLModel):
                                                                               seg["true_rew"].reshape(
                                                                                   (self.n_envs, -1)),
                                                                               seg["dones"].reshape((self.n_envs, -1)),
-                                                                              writer, timesteps_so_far)
+                                                                              writer, timesteps_so_far())
 
                         args = seg["ob"], seg["ob"], seg["ac"], atarg
                         fvpargs = [arr[::5] for arr in args]
@@ -323,7 +329,7 @@ class TRPO(ActorCriticRLModel):
                         self.assign_old_eq_new(sess=self.sess)
 
                         with self.timed("computegrad"):
-                            steps = timesteps_so_far + (k + 1) * (seg["total_timestep"] / self.g_step)
+                            steps = timesteps_so_far() + (k + 1) * (seg["total_timestep"] / self.g_step)
                             run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                             run_metadata = tf.RunMetadata()
                             # run loss backprop with summary, and save the metadata (memory, compute time, ...)
@@ -429,13 +435,17 @@ class TRPO(ActorCriticRLModel):
                     logger.record_tabular("EpRewMean", np.mean(rewbuffer))
                     if self.using_gail:
                         logger.record_tabular("EpTrueRewMean", np.mean(true_rewbuffer))
-                    logger.record_tabular("EpThisIter", len(lens))
-                    episodes_so_far += len(lens)
-                    timesteps_so_far += seg["total_timestep"]
+                    # count number of episodes done this iteration
+                    ep_done = (MPI.COMM_WORLD.allreduce(seg["dones"]) == True).sum()
+                    logger.record_tabular("EpThisIter", ep_done)
+                    # total timesteps between 2 resets
+                    total_timestep = MPI.COMM_WORLD.allreduce(seg["total_timestep"])
+                    logger.record_tabular("TimestepsSoFar", timesteps_so_far())
+                    if ep_done > 0:
+                        episodes_so_far += ep_done
+                        prev_timesteps_so_far = prev_timesteps_so_far + total_timestep
                     iters_so_far += 1
-
                     logger.record_tabular("EpisodesSoFar", episodes_so_far)
-                    logger.record_tabular("TimestepsSoFar", timesteps_so_far)
                     logger.record_tabular("TimeElapsed", time.time() - t_start)
 
                     if self.verbose >= 1 and self.rank == 0:
