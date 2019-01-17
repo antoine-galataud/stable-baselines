@@ -19,6 +19,7 @@ Pre-Release 2.4.0a (WIP)
 - added more flexible custom LSTM policies
 - added auto entropy coefficient optimization for SAC
 - clip continuous actions at test time too for all algorithms (except SAC/DDPG where it is not needed)
+- fixed computation of training metrics in TRPO and PPO1
 
 
 Release 2.3.0 (2018-12-05)
@@ -214,4 +215,4 @@ Contributors (since v2.0.0):
 In random order...
 
 Thanks to @bjmuld @iambenzo @iandanforth @r7vme @brendenpetersen @huvar @abhiskk @JohannesAck
-@EliasHasle @mrakgr @Bleyddyn
+@EliasHasle @mrakgr @Bleyddyn @antoine-galataud
