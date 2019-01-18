@@ -443,7 +443,7 @@ class TRPO(ActorCriticRLModel):
                     logger.record_tabular("TimestepsSoFar", timesteps_so_far())
                     if ep_done > 0:
                         episodes_so_far += ep_done
-                        prev_timesteps_so_far = prev_timesteps_so_far + total_timestep
+                        prev_timesteps_so_far += total_timestep
                     iters_so_far += 1
                     logger.record_tabular("EpisodesSoFar", episodes_so_far)
                     logger.record_tabular("TimeElapsed", time.time() - t_start)
