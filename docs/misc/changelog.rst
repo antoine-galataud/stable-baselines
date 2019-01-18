@@ -5,8 +5,16 @@ Changelog
 
 For download links, please look at `Github release page <https://github.com/hill-a/stable-baselines/releases>`_.
 
-Pre-Release 2.4.0a (WIP)
+Pre-Release 2.4.1 (WIP)
 --------------------------
+
+- fixed computation of training metrics in TRPO and PPO1
+
+
+Release 2.4.0 (2019-01-17)
+--------------------------
+
+**Soft Actor-Critic (SAC) and policy kwargs**
 
 - added Soft Actor-Critic (SAC) model
 - fixed a bug in DQN where prioritized_replay_beta_iters param was not used
@@ -19,7 +27,9 @@ Pre-Release 2.4.0a (WIP)
 - added more flexible custom LSTM policies
 - added auto entropy coefficient optimization for SAC
 - clip continuous actions at test time too for all algorithms (except SAC/DDPG where it is not needed)
-- fixed computation of training metrics in TRPO and PPO1
+- added a mean to pass kwargs to policy when creating a model (+ save those kwargs)
+- fixed DQN examples in DQN folder
+- added possibility to pass activation function for DDPG, DQN and SAC
 
 
 Release 2.3.0 (2018-12-05)
