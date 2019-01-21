@@ -78,6 +78,8 @@ def traj_segment_generator(policy, env, horizon, reward_giver=None, gail=False):
             ep_rets = []
             ep_true_rets = []
             ep_lens = []
+            # make sure total_timesteps increments correctly
+            cur_ep_len = 0
         i = step % horizon
         observations[i] = observation
         vpreds[i] = vpred[0]
