@@ -262,6 +262,8 @@ class TRPO(ActorCriticRLModel):
                 prev_timesteps_so_far = 0
                 # timesteps count after last reset
                 total_timestep = 0
+                # number of episodes done in an iteration
+                ep_done = 0
                 # current total count of timesteps
                 def timesteps_so_far():
                     return prev_timesteps_so_far + total_timestep
@@ -431,6 +433,10 @@ class TRPO(ActorCriticRLModel):
                     lenbuffer.extend(lens)
                     rewbuffer.extend(rews)
 
+                    # update global timesteps count only when both losses 
+                    # and timesteps so far metrics are recorded
+                    if ep_done > 0:
+                        prev_timesteps_so_far += total_timestep
                     logger.record_tabular("EpLenMean", np.mean(lenbuffer))
                     logger.record_tabular("EpRewMean", np.mean(rewbuffer))
                     if self.using_gail:
@@ -443,7 +449,6 @@ class TRPO(ActorCriticRLModel):
                     logger.record_tabular("TimestepsSoFar", timesteps_so_far())
                     if ep_done > 0:
                         episodes_so_far += ep_done
-                        prev_timesteps_so_far += total_timestep
                     iters_so_far += 1
                     logger.record_tabular("EpisodesSoFar", episodes_so_far)
                     logger.record_tabular("TimeElapsed", time.time() - t_start)
