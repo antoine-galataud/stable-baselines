@@ -427,7 +427,6 @@ class TRPO(ActorCriticRLModel):
 
                     if len(lenbuffer) > 0:
                         logger.record_tabular("EpLenMean", np.mean(lenbuffer))
-                    if len(rewbuffer) > 0:
                         logger.record_tabular("EpRewMean", np.mean(rewbuffer))
                     if self.using_gail:
                         logger.record_tabular("EpTrueRewMean", np.mean(true_rewbuffer))

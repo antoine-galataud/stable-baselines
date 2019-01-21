@@ -299,7 +299,6 @@ class PPO1(ActorCriticRLModel):
                     rewbuffer.extend(rews)
                     if len(lenbuffer) > 0:
                         logger.record_tabular("EpLenMean", np.mean(lenbuffer))
-                    if len(rewbuffer) > 0:
                         logger.record_tabular("EpRewMean", np.mean(rewbuffer))
                     logger.record_tabular("EpThisIter", len(lens))
                     episodes_so_far += len(lens)
